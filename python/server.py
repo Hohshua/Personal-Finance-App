@@ -1,3 +1,5 @@
+# source /Users/tnappy/node_projects/quickstart/python/bin/activate
+# Read env vars from .env file
 import base64
 import os
 import datetime as dt
@@ -578,4 +580,4 @@ def format_error(e):
                       response['error_message'], 'error_code': response['error_code'], 'error_type': response['error_type']}}
 
 if __name__ == '__main__':
-    app.run(port=int(os.getenv('PORT', 3000)))
+    app.run(port=int(os.getenv('PORT', 8000)))
