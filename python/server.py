@@ -47,6 +47,7 @@ from plaid.model.ach_class import ACHClass
 from plaid.model.transfer_create_idempotency_key import TransferCreateIdempotencyKey
 from plaid.model.transfer_user_address_in_request import TransferUserAddressInRequest
 from plaid.api import plaid_api
+from .forms import *
 
 load_dotenv()
 
@@ -127,6 +128,16 @@ payment_id = None
 transfer_id = None
 
 item_id = None
+
+
+
+
+@app.route('/', methods=['POST'])
+def home():
+    form = HomeForm()
+    title = 'Home'
+
+
 
 
 @app.route('/api/info', methods=['POST'])
