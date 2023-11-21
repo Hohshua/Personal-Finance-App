@@ -1,5 +1,3 @@
-# source /Users/tnappy/node_projects/quickstart/python/bin/activate
-# Read env vars from .env file
 import base64
 import os
 import datetime as dt
@@ -7,7 +5,7 @@ import json
 import time
 
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Blueprint
 import plaid
 from plaid.model.payment_amount import PaymentAmount
 from plaid.model.payment_amount_currency import PaymentAmountCurrency
@@ -47,12 +45,8 @@ from plaid.model.ach_class import ACHClass
 from plaid.model.transfer_create_idempotency_key import TransferCreateIdempotencyKey
 from plaid.model.transfer_user_address_in_request import TransferUserAddressInRequest
 from plaid.api import plaid_api
-from .forms import *
+from .forms import HomeForm
 
-load_dotenv()
-
-
-app = Flask(__name__)
 
 # Fill in your Plaid API keys - https://dashboard.plaid.com/account/keys
 PLAID_CLIENT_ID = os.getenv('PLAID_CLIENT_ID')
@@ -114,7 +108,6 @@ products = []
 for product in PLAID_PRODUCTS:
     products.append(Products(product))
 
-
 # We store the access_token in memory - in production, store it in a secure
 # persistent data store.
 access_token = None
@@ -130,9 +123,9 @@ transfer_id = None
 item_id = None
 
 
+views = Blueprint("views",__name__)
 
-
-@app.route('/', methods=['POST'])
+@views.route('/', methods=['POST'])
 def home():
     form = HomeForm()
     title = 'Home'
@@ -140,7 +133,7 @@ def home():
 
 
 
-@app.route('/api/info', methods=['POST'])
+@views.route('/api/info', methods=['POST'])
 def info():
     global access_token
     global item_id
@@ -151,7 +144,7 @@ def info():
     })
 
 
-@app.route('/api/create_link_token_for_payment', methods=['POST'])
+@views.route('/api/create_link_token_for_payment', methods=['POST'])
 def create_link_token_for_payment():
     global payment_id
     try:
@@ -213,7 +206,7 @@ def create_link_token_for_payment():
         return json.loads(e.body)
 
 
-@app.route('/api/create_link_token', methods=['POST'])
+@views.route('/api/create_link_token', methods=['POST'])
 def create_link_token():
     try:
         request = LinkTokenCreateRequest(
@@ -239,7 +232,7 @@ def create_link_token():
 # https://plaid.com/docs/#exchange-token-flow
 
 
-@app.route('/api/set_access_token', methods=['POST'])
+@views.route('/api/set_access_token', methods=['POST'])
 def get_access_token():
     global access_token
     global item_id
@@ -260,7 +253,7 @@ def get_access_token():
 # https://plaid.com/docs/#auth
 
 
-@app.route('/api/auth', methods=['GET'])
+@views.route('/api/auth', methods=['GET'])
 def get_auth():
     try:
        request = AuthGetRequest(
@@ -278,7 +271,7 @@ def get_auth():
 # https://plaid.com/docs/#transactions
 
 
-@app.route('/api/transactions', methods=['GET'])
+@views.route('/api/transactions', methods=['GET'])
 def get_transactions():
     # Set cursor to empty to receive all historical updates
     cursor = ''
@@ -319,7 +312,7 @@ def get_transactions():
 # https://plaid.com/docs/#identity
 
 
-@app.route('/api/identity', methods=['GET'])
+@views.route('/api/identity', methods=['GET'])
 def get_identity():
     try:
         request = IdentityGetRequest(
@@ -338,7 +331,7 @@ def get_identity():
 # https://plaid.com/docs/#balance
 
 
-@app.route('/api/balance', methods=['GET'])
+@views.route('/api/balance', methods=['GET'])
 def get_balance():
     try:
         request = AccountsBalanceGetRequest(
@@ -356,7 +349,7 @@ def get_balance():
 # https://plaid.com/docs/#accounts
 
 
-@app.route('/api/accounts', methods=['GET'])
+@views.route('/api/accounts', methods=['GET'])
 def get_accounts():
     try:
         request = AccountsGetRequest(
@@ -376,7 +369,7 @@ def get_accounts():
 # https://plaid.com/docs/#assets
 
 
-@app.route('/api/assets', methods=['GET'])
+@views.route('/api/assets', methods=['GET'])
 def get_assets():
     try:
         request = AssetReportCreateRequest(
@@ -448,7 +441,7 @@ def get_assets():
 # https://plaid.com/docs/#investments
 
 
-@app.route('/api/holdings', methods=['GET'])
+@views.route('/api/holdings', methods=['GET'])
 def get_holdings():
     try:
         request = InvestmentsHoldingsGetRequest(access_token=access_token)
@@ -464,7 +457,7 @@ def get_holdings():
 # https://plaid.com/docs/#investments
 
 
-@app.route('/api/investments_transactions', methods=['GET'])
+@views.route('/api/investments_transactions', methods=['GET'])
 def get_investments_transactions():
     # Pull transactions for the last 30 days
 
@@ -491,7 +484,7 @@ def get_investments_transactions():
 # This functionality is only relevant for the ACH Transfer product.
 # Authorize a transfer
 
-@app.route('/api/transfer_authorize', methods=['GET'])
+@views.route('/api/transfer_authorize', methods=['GET'])
 def transfer_authorization():
     global authorization_id 
     global account_id
@@ -528,7 +521,7 @@ def transfer_authorization():
 
 # Create Transfer for a specified Transfer ID
 
-@app.route('/api/transfer_create', methods=['GET'])
+@views.route('/api/transfer_create', methods=['GET'])
 def transfer():
     try:
         request = TransferCreateRequest(
@@ -547,7 +540,7 @@ def transfer():
 # Retrieve Payment for a specified Payment ID
 
 
-@app.route('/api/payment', methods=['GET'])
+@views.route('/api/payment', methods=['GET'])
 def payment():
     global payment_id
     try:
@@ -564,7 +557,7 @@ def payment():
 # https://plaid.com/docs/#retrieve-item
 
 
-@app.route('/api/item', methods=['GET'])
+@views.route('/api/item', methods=['GET'])
 def item():
     try:
         request = ItemGetRequest(access_token=access_token)
@@ -589,6 +582,3 @@ def format_error(e):
     response = json.loads(e.body)
     return {'error': {'status_code': e.status, 'display_message':
                       response['error_message'], 'error_code': response['error_code'], 'error_type': response['error_type']}}
-
-if __name__ == '__main__':
-    app.run(port=int(os.getenv('PORT', 8000)))
